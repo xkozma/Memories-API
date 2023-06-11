@@ -24,14 +24,16 @@ class Image(db.Model):
     data = db.Column(db.LargeBinary, nullable=False)
     lat = db.Column(db.Double(100))
     lon = db.Column(db.Double(100))
+    alt = db.Column(db.Double(100))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-    def __init__(self, name, description, data,lat,lon, user_id):
+    def __init__(self, name, description, data,lat,lon,alt, user_id):
         self.name = name
         self.description = description
         self.data = data
         self.lat = lat
         self.lon = lon
+        self.alt = alt
         self.user_id = user_id
 
 # API endpoints
@@ -70,21 +72,22 @@ def upload():
     file = request.files.get('data')
     lat = request.form.get('lat')
     lon = request.form.get('lon')
+    alt = request.form.get('alt')
     user_id = request.form.get('user_id')
 
-    if not all([name, description, file,lat,lon, user_id]):
+    if not all([name, description, file,lat,lon, alt, user_id]):
         return jsonify({'message': 'Invalid request'})
 
     file_data = file.read()
     file_data_bytes = bytearray(file_data)
 
-    image = Image(name, description, file_data_bytes,lat,lon, user_id)
+    image = Image(name, description, file_data_bytes,lat,lon, alt, user_id)
     db.session.add(image)
     db.session.commit()
 
     return jsonify({'message': 'Image uploaded successfully'})
 
-@app.route('/images', methods=['GET'])
+@app.route('/images', methods=['POST'])
 def get_images():
     user_id = request.form.get('user_id')
 
@@ -97,6 +100,7 @@ def get_images():
             'description': image.description,
             'lat': image.lat,
             'lon': image.lon,
+            'alt': image.alt,
             'image_url': f"/images/{image.id}"  # Provide a URL or reference to the image file
         }
         image_list.append(image_data)
@@ -115,4 +119,4 @@ def get_image(image_id):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    app.run(debug=True,port = 7777)
